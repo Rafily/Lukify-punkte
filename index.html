@@ -8,6 +8,9 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Punkte" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" href="./icon-192.png" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <title>Lukify's 🦖 Punkte</title>
 <meta name="description" content="Belohnungs- und Punkte-App für Kinder – Sterne sammeln, Aufgaben erledigen, Belohnungen freischalten." />
 <style>
@@ -46,6 +49,11 @@
     display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.12s;
     backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 2px rgba(0,0,0,.1);}
   .iconbtn:active{transform:scale(.9);}
+
+  /* Sichtbarer Tastatur-Fokus, passend zum Glas-Look */
+  button:focus-visible,a:focus-visible,input:focus-visible,[data-action]:focus-visible{
+    outline:3px solid rgba(10,132,255,.65);outline-offset:2px;border-radius:12px;}
+  .field:focus-visible{outline:3px solid rgba(10,132,255,.65);outline-offset:1px;}
 
   .toolbar{padding:8px 18px 0;flex:0 0 auto;}
   .toolbar #subtitle{font-size:12px;color:var(--muted);font-weight:600;}
@@ -278,8 +286,8 @@
       <div class="lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
       <div class="wintitle display" id="title">Lukify's 🦖 Punkte</div>
       <div class="winbtns">
-        <button class="iconbtn" data-action="locktoggle" id="lockBtn">🔒</button>
-        <button class="iconbtn" data-action="mute" id="muteBtn">🔊</button>
+        <button class="iconbtn" data-action="locktoggle" id="lockBtn" aria-label="Erwachsenen-Modus entsperren">🔒</button>
+        <button class="iconbtn" data-action="mute" id="muteBtn" aria-label="Ton stummschalten">🔊</button>
       </div>
     </div>
     <div class="toolbar"><span id="subtitle">Tägliche Aufgaben · Belohnungen</span></div>
@@ -311,7 +319,7 @@ var REWARD_CATS = {
 var REWARD_ORDER=["leckereien","bildschirm","erlebnisse","ziele"];
 
 var DEFAULT = {
-  childName:"Lukas", muted:false, pin:null, transactions:[],
+  childName:"Lukas", muted:false, pin:null, backedUp:false, transactions:[],
   quickActions:[
     {id:"q1",emoji:"🛏️",label:"Bett gemacht",points:3,cat:"haushalt"},
     {id:"q2",emoji:"🍽️",label:"Tisch gedeckt",points:2,cat:"haushalt"},
@@ -355,7 +363,11 @@ var LEVELS = [
   {min:350,name:"Held",emoji:"🦸",color:"#bf5af2"},
   {min:700,name:"Champion",emoji:"🏆",color:"#ff9f0a"},
   {min:1200,name:"Meister",emoji:"💎",color:"#ff375f"},
-  {min:2500,name:"Legende",emoji:"👑",color:"#ffd60a"}
+  {min:2500,name:"Legende",emoji:"👑",color:"#ffd60a"},
+  {min:4000,name:"Großmeister",emoji:"🛡️",color:"#5e5ce6"},
+  {min:6000,name:"Titan",emoji:"⚡",color:"#ff9f0a"},
+  {min:8000,name:"Eroberer",emoji:"🐉",color:"#30b0c7"},
+  {min:10000,name:"Mythos",emoji:"🌌",color:"#bf5af2"}
 ];
 var EMOJIS_TASK = ["⭐","🌟","✨","😊","😄","🤗","😇","🧹","🧼","🧽","🍽️","🛏️","🚿","🦷","🪥","👕","🧺","🗑️","🧦","🪣","📚","📖","✏️","🎒","🧮","🔬","🗣️","🎨","🎵","🎸","🎹","🎯","🏃","⚽","🏀","🏊","🚴","🧘","🤸","🐶","🐱","🐟","🌱","🪴","🤝","🙏","❤️","🫶","👍","💪","🧠","🛒","🍎","🥦","🥕","🥛","💧","😴","🕊️","🧸","🧩"];
 var EMOJIS_REWARD = ["🍬","🍫","🍪","🧁","🍩","🍭","🍦","🍰","🍕","🍔","🍟","🌭","🥤","🍿","🎮","🕹️","📱","💻","⌨️","🖥️","📺","🎧","🎬","🎟️","🎲","🧩","🎨","🪀","🪁","🛹","🚲","🛴","⚽","🏀","🏊","🏕️","🎡","🎢","🎠","🌙","💤","🧑‍🤝‍🧑","🐶","🐱","🎁","🧸","👟","🧢","⌚","💰","🪙","🎤","🎸","🏖️","🍓","🍇","🎈","🎄","🎀","🏆"];
@@ -454,7 +466,7 @@ function saveReward(it){ var ex=state.rewards.some(function(r){return r.id===it.
 function delReward(id){ state.rewards=state.rewards.filter(function(r){return r.id!==id;}); save(); render(); }
 
 function hashPin(p){ var h=5381; for(var i=0;i<p.length;i++){ h=((h<<5)+h+p.charCodeAt(i))>>>0; } return "h"+h; }
-function lock(){ unlocked=false; if(tab==="aprovar"||tab==="ajustes") tab="inicio"; render(); }
+function lock(){ unlocked=false; if(typeof clearAutoLock==="function") clearAutoLock(); if(tab==="aprovar"||tab==="ajustes") tab="inicio"; render(); }
 function requireUnlock(target){
   if(unlocked){ tab=target; render(); return; }
   if(!state.pin){ modalSetPin(function(){ unlocked=true; tab=target; render(); }); }
@@ -463,13 +475,14 @@ function requireUnlock(target){
 
 function exportData(){
   try{
+    state.backedUp=true; save();
     var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
     var url=URL.createObjectURL(blob);
     var d=new Date(), stamp=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
     var a=document.createElement("a"); a.href=url; a.download="lukify-punkte-backup-"+stamp+".json";
     document.body.appendChild(a); a.click();
     setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },120);
-    toast("✅ Backup gespeichert");
+    toast("✅ Backup gespeichert"); render();
   }catch(e){ toast("Backup fehlgeschlagen"); }
 }
 function importData(){
@@ -498,8 +511,8 @@ function importData(){
 
 function render(){
   var main=document.getElementById("main"); var prevScroll=main.scrollTop;
-  document.getElementById("muteBtn").textContent=state.muted?"🔇":"🔊";
-  document.getElementById("lockBtn").textContent=unlocked?"🔓":"🔒";
+  var muteBtn=document.getElementById("muteBtn"); muteBtn.textContent=state.muted?"🔇":"🔊"; muteBtn.setAttribute("aria-label",state.muted?"Ton einschalten":"Ton stummschalten");
+  var lockBtn=document.getElementById("lockBtn"); lockBtn.textContent=unlocked?"🔓":"🔒"; lockBtn.setAttribute("aria-label",unlocked?"Erwachsenen-Modus sperren":"Erwachsenen-Modus entsperren");
   document.getElementById("title").textContent="Lukify's 🦖 Punkte";
   document.getElementById("subtitle").textContent=unlocked?"Erwachsenen-Modus 🔓 – zum Beenden 🔓 tippen":"Tägliche Aufgaben · Belohnungen";
   if(tab==="inicio") main.innerHTML=viewHome();
@@ -511,14 +524,16 @@ function render(){
   if(popNext){ var n=main.querySelector(".num"); if(n){ n.classList.add("pop"); } popNext=false; }
   main.scrollTop=prevScroll;
   var nameInput=document.getElementById("childName");
-  if(nameInput){ nameInput.addEventListener("change",function(){ state.childName=(this.value.trim()||"Lukas"); save(); setupPWA(); render(); }); }
+  if(nameInput){ nameInput.addEventListener("change",function(){ state.childName=(this.value.trim()||"Lukas"); save(); render(); }); }
+  if(typeof armAutoLock==="function"){ if(unlocked) armAutoLock(); else if(typeof clearAutoLock==="function") clearAutoLock(); }
 }
 function renderNav(){
   var pend=pendingTx().length;
   var items=[["inicio","🏠","Start"],["recompensas","🎁","Shop"],["extrato","🗓️","Verlauf"],["aprovar",(unlocked?"✅":"🔒"),"Freigabe"],["ajustes","⚙️","Mehr"]];
   document.getElementById("nav").innerHTML=items.map(function(it){
     var badge = (it[0]==="aprovar"&&pend>0) ? '<span class="badge">'+pend+'</span>' : '';
-    return '<button class="dockitem '+(tab===it[0]?"act":"")+'" data-action="navtab" data-tab="'+it[0]+'"><span class="dockicon" style="position:relative">'+it[1]+badge+'</span><span class="dlabel">'+it[2]+'</span><span class="rundot"></span></button>';
+    var aria = it[2]+((it[0]==="aprovar"&&pend>0)?(", "+pend+" offen"):"");
+    return '<button class="dockitem '+(tab===it[0]?"act":"")+'" data-action="navtab" data-tab="'+it[0]+'" aria-label="'+aria+'"'+(tab===it[0]?' aria-current="page"':'')+'><span class="dockicon" style="position:relative">'+it[1]+badge+'</span><span class="dlabel">'+it[2]+'</span><span class="rundot"></span></button>';
   }).join("");
 }
 
@@ -689,6 +704,7 @@ function viewSettings(){
   if(state.pin) html+='<button class="ghostbtn" data-action="removepin" style="margin-bottom:8px">🚫 PIN entfernen</button>';
   html+='<button class="ghostbtn" data-action="locknow">🔒 Sperren (Erwachsenen-Modus verlassen)</button></div>';
   html+='<div style="margin-top:22px"><h3 class="sectiontitle" style="margin:0 0 10px">Daten-Backup</h3>';
+  if(!state.backedUp) html+='<p class="hint" style="text-align:left;margin:-2px 0 10px;color:var(--accent)">💡 Noch kein Backup gespeichert. Tipp: einmal sichern, damit die Punkte bei Tablet-Verlust nicht weg sind.</p>';
   html+='<button class="ghostbtn" data-action="exportdata" style="margin-bottom:8px">⬇️ Backup speichern (Datei)</button>';
   html+='<button class="ghostbtn" data-action="importdata">⬆️ Backup laden (Datei)</button>';
   html+='<p class="note" style="margin-top:8px;text-align:left">Sichert alle Punkte, Aufgaben und Belohnungen als Datei – z. B. als Schutz gegen Tablet-Verlust.</p></div>';
@@ -825,32 +841,31 @@ document.addEventListener("click",function(e){
   else if(a==="resethist"){ modalConfirm({emoji:"⚠️",title:"Gesamten Verlauf zurücksetzen?",body:"Das löscht alle Einträge und der Punktestand geht auf null. Aufgaben und Belohnungen bleiben.",confirmLabel:"Alles zurücksetzen",tone:"rose",onConfirm:function(){state.transactions=[];save();render();}}); }
 });
 
-function drawStar(x,cx,cy,spikes,outer,inner){
-  var rot=Math.PI/2*3, step=Math.PI/spikes; x.beginPath(); x.moveTo(cx,cy-outer);
-  for(var i=0;i<spikes;i++){ x.lineTo(cx+Math.cos(rot)*outer,cy+Math.sin(rot)*outer); rot+=step; x.lineTo(cx+Math.cos(rot)*inner,cy+Math.sin(rot)*inner); rot+=step; }
-  x.lineTo(cx,cy-outer); x.closePath(); x.fill();
-}
-function rrect(x,X,Y,w,h,r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+w,Y,X+w,Y+h,r); x.arcTo(X+w,Y+h,X,Y+h,r); x.arcTo(X,Y+h,X,Y,r); x.arcTo(X,Y,X+w,Y,r); x.closePath(); }
-function makeIcon(size){
-  var c=document.createElement("canvas"); c.width=c.height=size; var x=c.getContext("2d");
-  var g=x.createLinearGradient(0,0,size,size); g.addColorStop(0,"#5eead4"); g.addColorStop(.5,"#22d3ee"); g.addColorStop(1,"#0a84ff");
-  rrect(x,0,0,size,size,size*0.22); x.fillStyle=g; x.fill();
-  x.fillStyle="#ffffff"; drawStar(x,size/2,size*0.52,5,size*0.30,size*0.14);
-  return c.toDataURL("image/png");
-}
-function setupPWA(){
-  try{
-    var i180=makeIcon(180), i192=makeIcon(192), i512=makeIcon(512);
-    setLink("apple-touch-icon",i180); setLink("icon",i180);
-    var manifest={name:"Lukify's 🦖 Punkte",short_name:"Lukify",start_url:".",scope:".",display:"standalone",orientation:"portrait",background_color:"#14b8a6",theme_color:"#0ea5e9",lang:"de",
-      icons:[{src:i192,sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:i512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
-    var blob=new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}); setManifest(URL.createObjectURL(blob));
-  }catch(e){}
-}
-function setLink(rel,href){ var l=document.querySelector('link[rel="'+rel+'"]'); if(!l){ l=document.createElement("link"); l.rel=rel; document.head.appendChild(l); } l.href=href; }
-function setManifest(href){ var l=document.querySelector('link[rel="manifest"]'); if(!l){ l=document.createElement("link"); l.rel="manifest"; document.head.appendChild(l); } l.href=href; }
+// Manifest und Icons werden jetzt statisch ausgeliefert (manifest.webmanifest + PNG-Dateien).
+// setupPWA bleibt als No-op erhalten, damit bestehende Aufrufe nicht brechen.
+function setupPWA(){}
 
-state=load(); setupPWA(); render();
+// Service Worker registrieren: cacht nur die statische App-Hülle für Offline-Betrieb.
+// Er fasst localStorage nicht an – alle Daten bleiben wie bisher im localStorage.
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("./sw.js").catch(function(){});
+  });
+}
+
+// Auto-Sperre: Erwachsenen-Modus nach 5 Minuten Inaktivität automatisch verlassen.
+var AUTO_LOCK_MS=5*60*1000, autoLockTimer=null;
+function clearAutoLock(){ if(autoLockTimer){ clearTimeout(autoLockTimer); autoLockTimer=null; } }
+function armAutoLock(){
+  clearAutoLock();
+  if(!unlocked) return;
+  autoLockTimer=setTimeout(function(){ if(unlocked){ lock(); toast("🔒 Erwachsenen-Modus automatisch gesperrt"); } },AUTO_LOCK_MS);
+}
+["click","keydown","touchstart","pointerdown"].forEach(function(ev){
+  document.addEventListener(ev,function(){ if(unlocked) armAutoLock(); },{passive:true});
+});
+
+state=load(); render();
 </script>
 </body>
 </html>
