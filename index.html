@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a84ff" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Punkte" />
+<title>Lukify's 🦖 Punkte</title>
+<meta name="description" content="Belohnungs- und Punkte-App für Kinder – Sterne sammeln, Aufgaben erledigen, Belohnungen freischalten." />
+<style>
+  :root{
+    --txt:#0b0b0d; --muted:#3a3a3f; --accent:#0a84ff;
+    --card:rgba(255,255,255,0.80); --fill:rgba(118,118,128,0.12); --fill2:rgba(118,118,128,0.20);
+    --border:rgba(0,0,0,0.09); --sep:rgba(0,0,0,0.07);
+    --earn:#34c759; --spend:#ff3b30; --gold:#ff9f0a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,Arial,sans-serif;
+    color:var(--txt);overflow:hidden;
+    background:
+      radial-gradient(130% 90% at 12% -10%, rgba(255,255,255,.42), transparent 55%),
+      linear-gradient(160deg,#5eead4 0%, #2dd4bf 20%, #22d3ee 40%, #0a84ff 72%, #0061dd 100%);
+    background-attachment:fixed;
+  }
+  .display{font-weight:700;letter-spacing:-.01em;}
+
+  .wrap{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;
+    background:rgba(255,255,255,0.18);backdrop-filter:blur(34px) saturate(170%);-webkit-backdrop-filter:blur(34px) saturate(170%);}
+
+  .titlebar{display:flex;align-items:center;gap:10px;padding:0 14px;height:calc(46px + env(safe-area-inset-top));
+    padding-top:env(safe-area-inset-top);border-bottom:1px solid var(--sep);position:relative;flex:0 0 auto;
+    background:rgba(255,255,255,0.22);backdrop-filter:blur(24px) saturate(185%);-webkit-backdrop-filter:blur(24px) saturate(185%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+  .lights{display:flex;gap:8px;z-index:2;}
+  .lights span{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 .5px rgba(0,0,0,.06) inset;}
+  .red{background:#ff5f57;} .yellow{background:#febc2e;} .green{background:#28c840;}
+  .wintitle{position:absolute;left:0;right:0;top:env(safe-area-inset-top);height:46px;display:flex;align-items:center;justify-content:center;
+    font-weight:600;font-size:14px;color:var(--txt);pointer-events:none;}
+  .winbtns{margin-left:auto;display:flex;gap:8px;z-index:2;}
+  .iconbtn{height:30px;width:30px;border:none;border-radius:50%;background:rgba(255,255,255,.28);color:var(--txt);font-size:15px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.12s;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 2px rgba(0,0,0,.1);}
+  .iconbtn:active{transform:scale(.9);}
+
+  .toolbar{padding:8px 18px 0;flex:0 0 auto;}
+  .toolbar #subtitle{font-size:12px;color:var(--muted);font-weight:600;}
+
+  main{flex:1;overflow-y:auto;padding:8px 18px 122px;}
+
+  .orbwrap{display:flex;flex-direction:column;align-items:center;padding-top:10px;}
+  .orb{position:relative;height:172px;width:172px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 34px rgba(0,0,0,.14);}
+  .orb .inner{height:140px;width:140px;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.9),rgba(255,255,255,.3) 48%,rgba(255,255,255,.2) 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    backdrop-filter:blur(22px) saturate(195%);-webkit-backdrop-filter:blur(22px) saturate(195%);border:1px solid rgba(255,255,255,.6);
+    box-shadow:inset 0 3px 6px rgba(255,255,255,.95),inset 0 -14px 24px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.08);}
+  .orb .num{font-weight:700;font-size:50px;color:var(--txt);line-height:1;letter-spacing:-.02em;}
+  .orb .num.pop{animation:pop .4s ease-out;}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+  .orb .lbl{color:var(--muted);font-weight:600;font-size:13px;margin-top:3px;}
+  .badges{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .pill{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:linear-gradient(155deg,rgba(255,255,255,.5),rgba(255,255,255,.22));border:1px solid rgba(255,255,255,.5);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);}
+  .pill.fire{background:rgba(255,159,10,.16);color:#c93400;}
+  .pill.pending{background:rgba(10,132,255,.14);color:var(--accent);}
+  .badge{position:absolute;top:-6px;right:-9px;background:var(--spend);color:#fff;font-size:10px;font-weight:700;
+    min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .row.pending{opacity:.7;}
+  .tag{font-size:10px;font-weight:700;color:var(--accent);background:rgba(10,132,255,.12);padding:1px 6px;border-radius:6px;margin-left:6px;}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;font-weight:600;text-align:center;}
+  .hint.earn{color:#248a3d;}
+
+  .card{border-radius:16px;background:linear-gradient(155deg,rgba(255,255,255,.42),rgba(255,255,255,.18));border:1px solid rgba(255,255,255,.65);padding:16px;
+    backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -14px 26px rgba(0,0,0,.05),0 12px 30px rgba(0,0,0,.13);}
+  .sectiontitle{font-weight:700;font-size:17px;letter-spacing:-.01em;margin:0 0 10px;}
+  .rowbetween{display:flex;align-items:center;justify-content:space-between;}
+  .cathead{font-weight:700;font-size:11px;margin:8px 0 8px;display:flex;align-items:center;gap:7px;letter-spacing:.6px;text-transform:uppercase;}
+  .catdot{display:inline-block;width:9px;height:9px;border-radius:50%;}
+
+  .bar{height:9px;border-radius:999px;background:var(--fill);overflow:hidden;}
+  .bar>span{display:block;height:100%;border-radius:999px;background:var(--accent);transition:width .5s;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .qbtn{border:1px solid rgba(255,255,255,.6);border-radius:16px;padding:14px;text-align:left;cursor:pointer;transition:.12s;color:var(--txt);
+    backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.88),inset 0 -12px 22px rgba(0,0,0,.04),0 8px 20px rgba(0,0,0,.11);}
+  .qbtn:active{transform:scale(.96);}
+  .qbtn .e{font-size:23px;}
+  .qbtn .t{font-size:14px;font-weight:600;line-height:1.2;margin:8px 0 6px;min-height:36px;}
+  .qbtn .p{font-weight:700;font-size:14px;}
+  .dashed{margin-top:12px;width:100%;border:1.5px dashed var(--border);background:rgba(255,255,255,.4);border-radius:16px;padding:12px;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;}
+  .dashed:hover{color:var(--txt);}
+
+  .row{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.55);border-radius:14px;background:linear-gradient(155deg,rgba(255,255,255,.4),rgba(255,255,255,.15));padding:10px 12px;
+    backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);box-shadow:inset 0 1px 0 rgba(255,255,255,.88),inset 0 -10px 18px rgba(0,0,0,.04),0 5px 14px rgba(0,0,0,.08);}
+  .row .e{font-size:24px;}
+  .row .t{flex:1;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .v{font-weight:700;font-size:14px;}
+  .v.earn{color:#248a3d;} .v.spend{color:#c4342b;} .v.gold{color:#b26a00;}
+  .minibtn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 4px;}
+  .minibtn:hover{color:var(--txt);}
+
+  .reward{border-radius:14px;border:1px solid rgba(255,255,255,.55);background:linear-gradient(155deg,rgba(255,255,255,.4),rgba(255,255,255,.15));padding:14px;
+    backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);box-shadow:inset 0 1px 0 rgba(255,255,255,.88),inset 0 -12px 22px rgba(0,0,0,.04),0 8px 20px rgba(0,0,0,.11);}
+  .reward.can{background:linear-gradient(155deg,rgba(255,255,255,.58),rgba(255,255,255,.3));}
+  .cta{padding:8px 15px;border:none;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;transition:.12s;}
+  .cta:active{transform:scale(.95);}
+  .cta.on{background:var(--accent);color:#fff;}
+  .cta.off{background:var(--fill);color:var(--muted);}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .stat{border-radius:14px;padding:12px;}
+  .stat.earn{background:rgba(52,199,89,.13);border:1px solid rgba(52,199,89,.28);}
+  .stat.spend{background:rgba(255,59,48,.13);border:1px solid rgba(255,59,48,.28);}
+  .stat .k{font-size:12px;font-weight:700;} .stat.earn .k{color:#248a3d;} .stat.spend .k{color:#c4342b;}
+  .stat .val{font-weight:700;font-size:20px;letter-spacing:-.01em;}
+  .daylabel{font-size:12px;font-weight:700;color:var(--muted);margin:14px 2px 8px;}
+
+  .cal{max-width:460px;margin:0 auto 18px;}
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .calhead b{font-weight:700;font-size:16px;text-transform:capitalize;letter-spacing:-.01em;}
+  .calnav{height:32px;width:32px;border:none;border-radius:9px;background:var(--fill);color:var(--txt);font-size:18px;font-weight:700;cursor:pointer;line-height:1;}
+  .calnav:active{transform:scale(.9);}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .calgrid .wd{text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding-bottom:2px;}
+  .cell{aspect-ratio:1/1;min-height:34px;border-radius:9px;background:var(--fill);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);border:2px solid transparent;cursor:pointer;}
+  .cell.empty{background:none;border:none;cursor:default;}
+  .cell.e1{background:#dbefff;color:#0a4d7a;}
+  .cell.e2{background:#9bd6ff;color:#063f63;}
+  .cell.e3{background:#bff0d0;color:#10643c;}
+  .cell.e4{background:#ffe3ad;color:#7a4a06;}
+  .cell.earned .cp{font-size:9px;font-weight:700;margin-top:-1px;}
+  .cell.today{border-color:var(--accent);}
+
+  .empty{text-align:center;padding:40px 20px;}
+  .empty .e{font-size:46px;opacity:.7;} .empty p{color:var(--muted);font-weight:600;font-size:14px;margin-top:10px;}
+
+  .field{width:100%;border-radius:11px;background:#fff;border:1px solid var(--border);padding:11px 12px;color:var(--txt);font-family:inherit;font-weight:600;font-size:15px;outline:none;}
+  .field:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(10,132,255,.15);}
+  label.lbl{font-size:12px;font-weight:700;color:var(--muted);}
+
+  .reset{width:100%;border:1px solid rgba(255,59,48,.4);color:var(--spend);background:rgba(255,255,255,.5);border-radius:14px;padding:13px;font-weight:600;font-size:14px;cursor:pointer;}
+  .reset:hover{background:rgba(255,59,48,.08);}
+  .ghostbtn{width:100%;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.32);color:var(--txt);border-radius:14px;padding:13px;font-weight:600;font-size:14px;cursor:pointer;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+  .ghostbtn:hover{background:rgba(255,255,255,.5);}
+  .note{text-align:center;font-size:12px;color:var(--muted);}
+
+  .appbtn{border:none;border-radius:10px;width:36px;height:36px;font-size:16px;font-weight:700;cursor:pointer;margin-left:4px;}
+  .appbtn:active{transform:scale(.9);}
+  .appbtn.ok{background:var(--earn);color:#fff;} .appbtn.no{background:var(--spend);color:#fff;}
+
+  nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:5;padding-bottom:env(safe-area-inset-bottom);}
+  .dock{margin:0 12px 12px;display:flex;justify-content:center;gap:6px;padding:8px 10px;border-radius:22px;
+    background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.18));backdrop-filter:blur(42px) saturate(200%);-webkit-backdrop-filter:blur(42px) saturate(200%);
+    border:1px solid rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -10px 18px rgba(0,0,0,.04),0 12px 38px rgba(0,0,0,.22);}
+  .dockitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:0;}
+  .dockicon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;
+    background:linear-gradient(160deg,rgba(255,255,255,.8),rgba(231,235,242,.5));box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 6px rgba(0,0,0,.16),0 0 0 .5px rgba(0,0,0,.04);transition:transform .14s;}
+  .dockitem.act .dockicon{transform:translateY(-3px) scale(1.06);box-shadow:0 5px 12px rgba(0,0,0,.22);}
+  .dlabel{font-size:9px;font-weight:600;color:#1d1d1f;}
+  .dockitem.act .dlabel{color:var(--accent);}
+  .rundot{width:4px;height:4px;border-radius:50%;background:#1d1d1f;opacity:0;}
+  .dockitem.act .rundot{opacity:.5;}
+
+  .overlay{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.4);backdrop-filter:blur(2px);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease-out;}
+  @media(min-width:480px){.overlay{align-items:center;}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{width:100%;max-width:480px;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(248,249,251,.48));backdrop-filter:blur(54px) saturate(200%);-webkit-backdrop-filter:blur(54px) saturate(200%);
+    border-top:1px solid rgba(255,255,255,.8);border-radius:22px 22px 0 0;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));animation:up .25s ease-out;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 -10px 44px rgba(0,0,0,.2);}
+  @media(min-width:480px){.sheet{border-radius:22px;border:1px solid var(--border);}}
+  @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .sheet h3{font-weight:700;font-size:18px;margin-bottom:16px;letter-spacing:-.01em;}
+  .emojirow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;max-height:160px;overflow-y:auto;padding-right:2px;}
+  .emojirow button{height:40px;width:40px;border-radius:11px;background:var(--fill);border:2px solid transparent;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .emojirow button.sel{background:rgba(10,132,255,.16);border-color:var(--accent);}
+  .catrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
+  .catrow .catchip{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--fill);color:var(--txt);font-weight:600;font-size:13px;cursor:pointer;}
+  .signrow{display:flex;gap:8px;margin-bottom:18px;}
+  .signrow button{flex:1;padding:10px;border:none;border-radius:11px;font-weight:600;font-size:14px;cursor:pointer;background:var(--fill);color:var(--muted);}
+  .signrow button.selearn{background:var(--earn);color:#fff;}
+  .signrow button.selspend{background:var(--spend);color:#fff;}
+  .stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:22px;}
+  .stepper button{height:46px;width:46px;border-radius:50%;border:none;background:var(--fill);color:var(--txt);font-size:24px;font-weight:700;cursor:pointer;}
+  .stepper button:active{transform:scale(.9);}
+  .stepper .sv{font-weight:700;font-size:30px;color:var(--accent);min-width:84px;text-align:center;letter-spacing:-.01em;}
+  .primary{width:100%;border:none;border-radius:14px;background:var(--accent);color:#fff;padding:14px;font-weight:600;font-size:15px;cursor:pointer;}
+  .primary:disabled{background:var(--fill);color:var(--muted);}
+  .primary:active{transform:scale(.97);}
+  .confirmbtns{display:flex;gap:12px;}
+  .confirmbtns button{flex:1;border:none;border-radius:14px;padding:13px;font-weight:600;font-size:15px;cursor:pointer;}
+  .btn-cancel{background:var(--fill);color:var(--txt);}
+  .btn-amber{background:var(--accent);color:#fff;}
+  .btn-rose{background:var(--spend);color:#fff;}
+  .center{text-align:center;}
+  .bigemoji{font-size:46px;margin-bottom:12px;}
+  .subtxt{color:var(--muted);font-size:14px;margin-top:8px;font-weight:500;}
+
+  .pindots{display:flex;gap:14px;justify-content:center;margin:14px 0 4px;}
+  .pindots .dot{width:14px;height:14px;border-radius:50%;background:var(--fill2);border:1px solid var(--border);}
+  .pindots .dot.on{background:var(--accent);border-color:var(--accent);}
+  .pindots.shake{animation:shake .4s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+  .keypad button{padding:15px;border:none;border-radius:14px;background:var(--fill);color:var(--txt);font-weight:600;font-size:22px;cursor:pointer;}
+  .keypad button:active{transform:scale(.94);}
+  .keypad button.blank{background:none;cursor:default;}
+
+  .card,.qbtn,.reward{position:relative;overflow:hidden;}
+  .card::before,.qbtn::before,.reward::before{content:"";position:absolute;top:0;left:-70%;width:55%;height:100%;
+    background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.42) 50%,transparent 100%);
+    transform:skewX(-18deg);pointer-events:none;animation:sheen 7s ease-in-out infinite;}
+  .card::before{animation-delay:.4s;}
+  .qbtn:nth-child(2n)::before{animation-delay:1.4s;}
+  .qbtn:nth-child(3n)::before{animation-delay:2.6s;}
+  .reward:nth-of-type(2n)::before{animation-delay:1.1s;}
+  @keyframes sheen{0%{left:-70%}14%{left:145%}100%{left:145%}}
+
+  #fx{position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;}
+  .conf{position:absolute;top:-10%;animation:conf linear forwards;}
+  @keyframes conf{0%{transform:translateY(0) translateX(0) rotate(0);opacity:1}100%{transform:translateY(112vh) translateX(var(--dx)) rotate(540deg);opacity:0}}
+  .float{position:absolute;left:50%;top:42%;transform:translateX(-50%);font-weight:700;font-size:44px;text-shadow:0 4px 18px rgba(0,0,0,.25);animation:fl 1.1s ease-out forwards;}
+  @keyframes fl{0%{transform:translate(-50%,20px) scale(.6);opacity:0}25%{transform:translate(-50%,-10px) scale(1.1);opacity:1}70%{transform:translate(-50%,-40px) scale(1);opacity:1}100%{transform:translate(-50%,-90px) scale(.9);opacity:0}}
+  .toast{position:absolute;top:calc(58px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(30,30,32,.92);color:#fff;font-weight:600;padding:11px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:fade .2s ease-out;max-width:90%;text-align:center;}
+  @media(prefers-reduced-motion:reduce){.conf,.float,.num.pop,.card::before,.qbtn::before,.reward::before{animation:none!important;}}
+
+  /* ===== Tablet ===== */
+  @media (min-width:700px){
+    .wrap{max-width:720px;}
+    nav{max-width:720px;}
+    main{padding:10px 28px 134px;}
+    .grid{grid-template-columns:repeat(3,1fr);}
+    .orb{height:196px;width:196px;}
+    .orb .inner{height:160px;width:160px;}
+    .orb .num{font-size:58px;}
+    .orb .lbl{font-size:14px;}
+    .sectiontitle{font-size:19px;}
+    .wintitle{font-size:15px;}
+    .toolbar #subtitle{font-size:13px;}
+    .qbtn .t{font-size:15px;}
+    .row .t,.v{font-size:15px;}
+    .twocol{gap:14px;}
+    .dock{gap:10px;padding:10px 14px;border-radius:26px;}
+    .dockicon{width:54px;height:54px;font-size:26px;border-radius:15px;}
+    .dlabel{font-size:11px;}
+    .cell{min-height:42px;font-size:13px;}
+    .sheet{max-width:560px;}
+  }
+  @media (min-width:1024px){
+    .wrap{max-width:900px;}
+    nav{max-width:900px;}
+    .grid{grid-template-columns:repeat(4,1fr);}
+    main{padding:12px 36px 140px;}
+  }
+  @media (min-width:1280px){
+    .wrap{max-width:980px;}
+    nav{max-width:980px;}
+    .grid{grid-template-columns:repeat(5,1fr);}
+  }
+  /* Querformat: kompakter, damit weniger gescrollt werden muss */
+  @media (orientation:landscape) and (min-width:900px){
+    .orbwrap{padding-top:2px;}
+    .orb{height:148px;width:148px;}
+    .orb .inner{height:120px;width:120px;}
+    .orb .num{font-size:44px;}
+    .orb .lbl{font-size:12px;}
+    .badges{margin-top:8px;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="titlebar">
+      <div class="lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+      <div class="wintitle display" id="title">Lukify's 🦖 Punkte</div>
+      <div class="winbtns">
+        <button class="iconbtn" data-action="locktoggle" id="lockBtn">🔒</button>
+        <button class="iconbtn" data-action="mute" id="muteBtn">🔊</button>
+      </div>
+    </div>
+    <div class="toolbar"><span id="subtitle">Tägliche Aufgaben · Belohnungen</span></div>
+    <main id="main"></main>
+    <nav><div class="dock" id="nav"></div></nav>
+  </div>
+  <div id="modal"></div>
+  <div id="fx"></div>
+
+<script>
+"use strict";
+
+var KEY = "pontosLukas:v5";
+
+var TASK_CATS = {
+  haushalt:{name:"Haushalt",emoji:"🏠",color:"#ff9500"},
+  schule:{name:"Schule",emoji:"📚",color:"#0a84ff"},
+  hygiene:{name:"Körperpflege",emoji:"🧼",color:"#00c7be"},
+  verhalten:{name:"Verhalten",emoji:"😊",color:"#ff2d55"},
+  gesundheit:{name:"Gesundheit",emoji:"💪",color:"#34c759"}
+};
+var TASK_ORDER=["haushalt","schule","hygiene","verhalten","gesundheit"];
+var REWARD_CATS = {
+  leckereien:{name:"Leckereien",emoji:"🍬",color:"#ff375f"},
+  bildschirm:{name:"Bildschirmzeit",emoji:"🎮",color:"#bf5af2"},
+  erlebnisse:{name:"Erlebnisse",emoji:"🌟",color:"#ff9f0a"},
+  ziele:{name:"Große Ziele",emoji:"🏆",color:"#ffd60a"}
+};
+var REWARD_ORDER=["leckereien","bildschirm","erlebnisse","ziele"];
+
+var DEFAULT = {
+  childName:"Lukas", muted:false, pin:null, transactions:[],
+  quickActions:[
+    {id:"q1",emoji:"🛏️",label:"Bett gemacht",points:3,cat:"haushalt"},
+    {id:"q2",emoji:"🍽️",label:"Tisch gedeckt",points:2,cat:"haushalt"},
+    {id:"q3",emoji:"🗑️",label:"Müll rausgebracht",points:2,cat:"haushalt"},
+    {id:"q4",emoji:"🧹",label:"Im Haushalt geholfen",points:3,cat:"haushalt"},
+    {id:"q5",emoji:"📚",label:"Hausaufgaben gemacht",points:5,cat:"schule"},
+    {id:"q6",emoji:"📖",label:"Gelesen",points:3,cat:"schule"},
+    {id:"q7",emoji:"🎵",label:"Geübt (Musik/Sport)",points:3,cat:"schule"},
+    {id:"q8",emoji:"🦷",label:"Zähne geputzt",points:2,cat:"hygiene"},
+    {id:"q9",emoji:"🚿",label:"Geduscht",points:2,cat:"hygiene"},
+    {id:"q10",emoji:"😊",label:"Nett gewesen",points:2,cat:"verhalten"},
+    {id:"q11",emoji:"🤝",label:"Geteilt / geholfen",points:2,cat:"verhalten"},
+    {id:"q12",emoji:"🕊️",label:"Ohne Streit",points:2,cat:"verhalten"},
+    {id:"q13",emoji:"🏃",label:"Sport gemacht",points:3,cat:"gesundheit"},
+    {id:"q14",emoji:"🥦",label:"Gemüse gegessen",points:2,cat:"gesundheit"},
+    {id:"q15",emoji:"💧",label:"Wasser getrunken",points:1,cat:"gesundheit"}
+  ],
+  rewards:[
+    {id:"r1",emoji:"🍫",name:"Süßigkeit",cost:8,cat:"leckereien"},
+    {id:"r2",emoji:"🍦",name:"Eis",cost:15,cat:"leckereien"},
+    {id:"r3",emoji:"🍕",name:"Lieblingsessen",cost:35,cat:"leckereien"},
+    {id:"r4",emoji:"🎬",name:"Film aussuchen",cost:20,cat:"bildschirm"},
+    {id:"r5",emoji:"🎮",name:"30 Min. Videospiel",cost:25,cat:"bildschirm"},
+    {id:"r6",emoji:"🌙",name:"1 Stunde länger wach",cost:40,cat:"bildschirm"},
+    {id:"r7",emoji:"🧑‍🤝‍🧑",name:"Freund einladen",cost:50,cat:"erlebnisse"},
+    {id:"r8",emoji:"🍿",name:"Kino",cost:70,cat:"erlebnisse"},
+    {id:"r9",emoji:"🎡",name:"Besonderer Ausflug",cost:90,cat:"erlebnisse"},
+    {id:"r10",emoji:"🎁",name:"Neues Spielzeug",cost:300,cat:"ziele"},
+    {id:"r11",emoji:"🎧",name:"Kopfhörer",cost:800,cat:"ziele"},
+    {id:"r12",emoji:"🚲",name:"Fahrrad",cost:1500,cat:"ziele"},
+    {id:"r13",emoji:"🎤",name:"Mikrofon",cost:2000,cat:"ziele"},
+    {id:"r14",emoji:"🕹️",name:"Spielkonsole",cost:5000,cat:"ziele"},
+    {id:"r15",emoji:"💻",name:"Computer / PC",cost:10000,cat:"ziele"},
+    {id:"r16",emoji:"📱",name:"iPhone",cost:10000,cat:"ziele"}
+  ]
+};
+var LEVELS = [
+  {min:0,name:"Anfänger",emoji:"🌱",color:"#34c759"},
+  {min:50,name:"Lehrling",emoji:"⭐",color:"#00c7be"},
+  {min:150,name:"Abenteurer",emoji:"🚀",color:"#0a84ff"},
+  {min:350,name:"Held",emoji:"🦸",color:"#bf5af2"},
+  {min:700,name:"Champion",emoji:"🏆",color:"#ff9f0a"},
+  {min:1200,name:"Meister",emoji:"💎",color:"#ff375f"},
+  {min:2500,name:"Legende",emoji:"👑",color:"#ffd60a"}
+];
+var EMOJIS_TASK = ["⭐","🌟","✨","😊","😄","🤗","😇","🧹","🧼","🧽","🍽️","🛏️","🚿","🦷","🪥","👕","🧺","🗑️","🧦","🪣","📚","📖","✏️","🎒","🧮","🔬","🗣️","🎨","🎵","🎸","🎹","🎯","🏃","⚽","🏀","🏊","🚴","🧘","🤸","🐶","🐱","🐟","🌱","🪴","🤝","🙏","❤️","🫶","👍","💪","🧠","🛒","🍎","🥦","🥕","🥛","💧","😴","🕊️","🧸","🧩"];
+var EMOJIS_REWARD = ["🍬","🍫","🍪","🧁","🍩","🍭","🍦","🍰","🍕","🍔","🍟","🌭","🥤","🍿","🎮","🕹️","📱","💻","⌨️","🖥️","📺","🎧","🎬","🎟️","🎲","🧩","🎨","🪀","🪁","🛹","🚲","🛴","⚽","🏀","🏊","🏕️","🎡","🎢","🎠","🌙","💤","🧑‍🤝‍🧑","🐶","🐱","🎁","🧸","👟","🧢","⌚","💰","🪙","🎤","🎸","🏖️","🍓","🍇","🎈","🎄","🎀","🏆"];
+
+var state, tab="inicio", popNext=false, audioCtx=null, unlocked=false;
+var calRef=new Date(), calY=calRef.getFullYear(), calM=calRef.getMonth();
+
+function load(){
+  try{ var raw=localStorage.getItem(KEY); if(raw){ return Object.assign({},DEFAULT,JSON.parse(raw)); } }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function dayKey(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+function isApproved(t){ return t.status!=="pending"; }
+function approvedTx(){ return state.transactions.filter(isApproved); }
+function pendingTx(){ return state.transactions.filter(function(t){return t.status==="pending";}); }
+function balance(){ return approvedTx().reduce(function(s,t){return s+t.points;},0); }
+function lifetime(){ return approvedTx().filter(function(t){return t.points>0;}).reduce(function(s,t){return s+t.points;},0); }
+function levelInfo(){
+  var lt=lifetime(), idx=0;
+  for(var i=0;i<LEVELS.length;i++){ if(lt>=LEVELS[i].min) idx=i; }
+  var cur=LEVELS[idx], next=LEVELS[idx+1]||null;
+  var prog = next ? Math.min(1,(lt-cur.min)/(next.min-cur.min)) : 1;
+  return {cur:cur,next:next,prog:prog,lt:lt};
+}
+function streak(){
+  var days={};
+  approvedTx().filter(function(t){return t.points>0;}).forEach(function(t){ days[dayKey(new Date(t.date))]=1; });
+  var cur=new Date(); if(!days[dayKey(cur)]) cur.setDate(cur.getDate()-1);
+  var s=0; while(days[dayKey(cur)]){ s++; cur.setDate(cur.getDate()-1); } return s;
+}
+function earnedToday(){ var tk=dayKey(); return approvedTx().filter(function(t){return dayKey(new Date(t.date))===tk&&t.points>0;}).reduce(function(s,t){return s+t.points;},0); }
+function pendingEarn(){ return pendingTx().filter(function(t){return t.points>0;}).reduce(function(s,t){return s+t.points;},0); }
+function nextReward(){ var b=balance(), sorted=state.rewards.slice().sort(function(a,c){return a.cost-c.cost;}); return sorted.find(function(r){return r.cost>b;})||sorted[sorted.length-1]||null; }
+
+function tone(kind){
+  if(state.muted) return;
+  try{
+    var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return;
+    audioCtx=audioCtx||new Ctx(); if(audioCtx.state==="suspended") audioCtx.resume();
+    var notes = kind==="reward"?[523,659,784,1047]:kind==="spend"?[392,294]:[523,784];
+    notes.forEach(function(f,i){
+      var o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type="sine";
+      o.connect(g); g.connect(audioCtx.destination);
+      var t0=audioCtx.currentTime+i*0.09; o.frequency.setValueAtTime(f,t0);
+      g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.16,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.18);
+      o.start(t0); o.stop(t0+0.2);
+    });
+  }catch(e){}
+}
+function confetti(kind){
+  var fx=document.getElementById("fx");
+  var set = kind==="spend"?["💔","💧"]:kind==="reward"?["🎉","🎊","⭐","✨","🏆"]:["⭐","✨","🌟","💫","🎉"];
+  for(var i=0;i<28;i++){
+    var s=document.createElement("span"); s.className="conf"; s.textContent=set[i%set.length];
+    var dur=0.9+Math.random()*0.6;
+    s.style.left=(Math.random()*100)+"%"; s.style.fontSize=(14+Math.random()*18)+"px";
+    s.style.animationDelay=(Math.random()*0.25)+"s"; s.style.animationDuration=dur+"s"; s.style.setProperty("--dx",((Math.random()-0.5)*80)+"px");
+    fx.appendChild(s);
+    (function(node){ setTimeout(function(){ node.remove(); }, (dur+0.4)*1000); })(s);
+  }
+}
+function floatPts(points){
+  var fx=document.getElementById("fx"); var s=document.createElement("span"); s.className="float";
+  s.style.color = points>=0 ? "#34c759" : "#ff3b30"; s.textContent=(points>0?"+":"")+points+" ⭐"; fx.appendChild(s); setTimeout(function(){ s.remove(); },1100);
+}
+function floatPending(points){
+  var fx=document.getElementById("fx"); var s=document.createElement("span"); s.className="float"; s.style.color="#0a84ff";
+  s.textContent="+"+Math.abs(points)+" ⏳"; fx.appendChild(s); setTimeout(function(){ s.remove(); },1100);
+}
+function toast(msg){ var fx=document.getElementById("fx"); var s=document.createElement("div"); s.className="toast"; s.textContent=msg; fx.appendChild(s); setTimeout(function(){ s.remove(); },1800); }
+
+function addTx(o){
+  var status = o.status || (unlocked ? "approved" : "pending");
+  state.transactions.push({id:uid(),date:new Date().toISOString(),emoji:o.emoji,label:o.label,points:o.points,kind:o.kind,status:status});
+  save();
+  if(status==="pending"){ if(o.points>0) floatPending(o.points); toast("⏳ Zur Freigabe gesendet!"); }
+  else { var k = o.kind==="reward"?"reward":(o.points>=0?"earn":"spend"); popNext=true; confetti(k); floatPts(o.points); tone(k); }
+  render();
+}
+function redeem(r){
+  if(unlocked){ if(balance()<r.cost){ toast("Nicht genug Sterne"); return; } addTx({emoji:r.emoji,label:r.name,points:-r.cost,kind:"reward",status:"approved"}); toast("🎉 "+r.name+" eingelöst!"); }
+  else { addTx({emoji:r.emoji,label:"Wunsch: "+r.name,points:-r.cost,kind:"reward"}); }
+}
+function approveTx(id){ var t=state.transactions.find(function(x){return x.id===id;}); if(!t) return; t.status="approved"; t.approvedDate=new Date().toISOString(); save();
+  var k = t.kind==="reward"?"reward":(t.points>=0?"earn":"spend"); popNext=true; confetti(k); tone(k); render(); }
+function rejectTx(id){ state.transactions=state.transactions.filter(function(x){return x.id!==id;}); save(); render(); }
+function approveAll(){ state.transactions.forEach(function(t){ if(t.status==="pending") t.status="approved"; }); save(); confetti("reward"); tone("reward"); render(); }
+function delTx(id){ state.transactions=state.transactions.filter(function(t){return t.id!==id;}); save(); render(); }
+function saveQuick(it){ var ex=state.quickActions.some(function(q){return q.id===it.id;}); state.quickActions= ex? state.quickActions.map(function(q){return q.id===it.id?it:q;}) : state.quickActions.concat([it]); save(); render(); }
+function delQuick(id){ state.quickActions=state.quickActions.filter(function(q){return q.id!==id;}); save(); render(); }
+function saveReward(it){ var ex=state.rewards.some(function(r){return r.id===it.id;}); state.rewards= ex? state.rewards.map(function(r){return r.id===it.id?it:r;}) : state.rewards.concat([it]); save(); render(); }
+function delReward(id){ state.rewards=state.rewards.filter(function(r){return r.id!==id;}); save(); render(); }
+
+function hashPin(p){ var h=5381; for(var i=0;i<p.length;i++){ h=((h<<5)+h+p.charCodeAt(i))>>>0; } return "h"+h; }
+function lock(){ unlocked=false; if(tab==="aprovar"||tab==="ajustes") tab="inicio"; render(); }
+function requireUnlock(target){
+  if(unlocked){ tab=target; render(); return; }
+  if(!state.pin){ modalSetPin(function(){ unlocked=true; tab=target; render(); }); }
+  else { modalPin(function(){ unlocked=true; tab=target; render(); }); }
+}
+
+function exportData(){
+  try{
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var d=new Date(), stamp=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    var a=document.createElement("a"); a.href=url; a.download="lukify-punkte-backup-"+stamp+".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },120);
+    toast("✅ Backup gespeichert");
+  }catch(e){ toast("Backup fehlgeschlagen"); }
+}
+function importData(){
+  var inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json"; inp.style.display="none";
+  document.body.appendChild(inp);
+  inp.addEventListener("change",function(){
+    var f=inp.files&&inp.files[0];
+    var cleanup=function(){ if(inp.parentNode) inp.parentNode.removeChild(inp); };
+    if(!f){ cleanup(); return; }
+    var r=new FileReader();
+    r.onload=function(){
+      cleanup();
+      try{
+        var obj=JSON.parse(r.result);
+        if(!obj||!Array.isArray(obj.transactions)||!Array.isArray(obj.quickActions)||!Array.isArray(obj.rewards)) throw 0;
+        modalConfirm({emoji:"⬆️",title:"Backup laden?",body:"Der aktuelle Stand wird durch das Backup ersetzt.",confirmLabel:"Laden",tone:"amber",onConfirm:function(){
+          state=Object.assign({},DEFAULT,obj); save(); setupPWA(); render(); toast("✅ Backup geladen");
+        }});
+      }catch(e){ toast("Ungültige Backup-Datei"); }
+    };
+    r.onerror=function(){ cleanup(); toast("Datei konnte nicht gelesen werden"); };
+    r.readAsText(f);
+  });
+  inp.click();
+}
+
+function render(){
+  var main=document.getElementById("main"); var prevScroll=main.scrollTop;
+  document.getElementById("muteBtn").textContent=state.muted?"🔇":"🔊";
+  document.getElementById("lockBtn").textContent=unlocked?"🔓":"🔒";
+  document.getElementById("title").textContent="Lukify's 🦖 Punkte";
+  document.getElementById("subtitle").textContent=unlocked?"Erwachsenen-Modus 🔓 – zum Beenden 🔓 tippen":"Tägliche Aufgaben · Belohnungen";
+  if(tab==="inicio") main.innerHTML=viewHome();
+  else if(tab==="recompensas") main.innerHTML=viewRewards();
+  else if(tab==="extrato") main.innerHTML=viewExtrato();
+  else if(tab==="aprovar") main.innerHTML=viewApprove();
+  else main.innerHTML=viewSettings();
+  renderNav();
+  if(popNext){ var n=main.querySelector(".num"); if(n){ n.classList.add("pop"); } popNext=false; }
+  main.scrollTop=prevScroll;
+  var nameInput=document.getElementById("childName");
+  if(nameInput){ nameInput.addEventListener("change",function(){ state.childName=(this.value.trim()||"Lukas"); save(); setupPWA(); render(); }); }
+}
+function renderNav(){
+  var pend=pendingTx().length;
+  var items=[["inicio","🏠","Start"],["recompensas","🎁","Shop"],["extrato","🗓️","Verlauf"],["aprovar",(unlocked?"✅":"🔒"),"Freigabe"],["ajustes","⚙️","Mehr"]];
+  document.getElementById("nav").innerHTML=items.map(function(it){
+    var badge = (it[0]==="aprovar"&&pend>0) ? '<span class="badge">'+pend+'</span>' : '';
+    return '<button class="dockitem '+(tab===it[0]?"act":"")+'" data-action="navtab" data-tab="'+it[0]+'"><span class="dockicon" style="position:relative">'+it[1]+badge+'</span><span class="dlabel">'+it[2]+'</span><span class="rundot"></span></button>';
+  }).join("");
+}
+
+function taskCat(k){ return TASK_CATS[k]||{name:"Weitere",emoji:"⭐",color:"#8e8e93"}; }
+function rewardCat(k){ return REWARD_CATS[k]||{name:"Weitere",emoji:"⭐",color:"#8e8e93"}; }
+
+function viewHome(){
+  var b=balance(), li=levelInfo(), st=streak(), et=earnedToday(), nr=nextReward();
+  var deg=Math.round(li.prog*360);
+  var html='<div class="orbwrap"><div class="orb" style="background:conic-gradient('+li.cur.color+' '+deg+'deg, rgba(0,0,0,.08) '+deg+'deg)">'+
+    '<div class="inner"><span class="num">'+b+'</span><span class="lbl">⭐ Sterne</span></div></div>';
+  var pe=pendingEarn(), pc=pendingTx().length;
+  html+='<div class="badges"><span class="pill" style="background:'+li.cur.color+'22;color:'+li.cur.color+'">'+li.cur.emoji+' '+li.cur.name+'</span>';
+  if(st>0) html+='<span class="pill fire">🔥 '+st+' '+(st===1?"Tag":"Tage")+'</span>';
+  if(pc>0) html+='<span class="pill pending">⏳ '+pc+' offen</span>';
+  html+='</div>';
+  if(li.next) html+='<p class="hint">noch <b style="color:var(--txt)">'+(li.next.min-li.lt)+'</b> bis '+li.next.emoji+' '+li.next.name+'</p>';
+  if(et>0) html+='<p class="hint earn">+'+et+' ⭐ heute verdient</p>';
+  if(pe>0) html+='<p class="hint" style="color:var(--accent)">⏳ +'+pe+' ⭐ warten auf Freigabe</p>';
+  html+='</div>';
+
+  if(nr){
+    var rp=Math.min(1,b/nr.cost)*100; var rc=rewardCat(nr.cat);
+    html+='<div class="card" style="margin-top:18px;border-left:4px solid '+rc.color+'"><div class="rowbetween" style="margin-bottom:8px">'+
+      '<span style="font-weight:700;font-size:14px">Nächste Belohnung</span><span class="v" style="color:'+rc.color+'">'+b+'/'+nr.cost+' ⭐</span></div>'+
+      '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:30px">'+nr.emoji+'</span>'+
+      '<div style="flex:1"><p style="font-weight:600;font-size:14px;margin-bottom:8px">'+esc(nr.name)+'</p>'+
+      '<div class="bar"><span style="width:'+rp+'%;background:'+rc.color+'"></span></div></div></div></div>';
+  }
+
+  html+='<div style="margin-top:18px"><h2 class="sectiontitle">Sterne verdienen</h2>';
+  if(!unlocked) html+='<p class="hint" style="text-align:left;margin:-4px 0 10px;color:var(--accent)">⏳ Tippe auf eine Aufgabe – sie geht zur Freigabe.</p>';
+  var rendered={};
+  TASK_ORDER.forEach(function(ck){
+    var items=state.quickActions.filter(function(q){return (q.cat||"haushalt")===ck;});
+    if(!items.length) return; var c=TASK_CATS[ck];
+    html+='<div class="cathead" style="color:'+c.color+'"><span class="catdot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.name+'</div><div class="grid" style="margin-bottom:14px">';
+    items.forEach(function(q){ rendered[q.id]=1; html+=qbtnHTML(q,c.color); });
+    html+='</div>';
+  });
+  var rest=state.quickActions.filter(function(q){return !rendered[q.id];});
+  if(rest.length){ var c=taskCat("_"); html+='<div class="cathead" style="color:'+c.color+'"><span class="catdot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.name+'</div><div class="grid" style="margin-bottom:14px">';
+    rest.forEach(function(q){ html+=qbtnHTML(q,c.color); }); html+='</div>'; }
+  html+='<button class="dashed" data-action="custom">✏️ '+(unlocked?"Anderer Eintrag (plus / minus)":"Andere Punkte anfragen")+'</button></div>';
+  return html;
+}
+function qbtnHTML(q,col){
+  return '<button class="qbtn" data-action="quick" data-id="'+q.id+'" style="border-left:4px solid '+col+';background:linear-gradient(155deg,rgba(255,255,255,.42),'+col+'1c 52%,rgba(255,255,255,.14))">'+
+    '<div class="e" style="background:'+col+'22;border-radius:11px;width:42px;height:42px;display:flex;align-items:center;justify-content:center">'+q.emoji+'</div>'+
+    '<div class="t">'+esc(q.label)+'</div><div class="p" style="color:'+col+'">+'+q.points+' ⭐</div></button>';
+}
+
+function viewRewards(){
+  var b=balance();
+  var html='<h2 class="sectiontitle" style="margin-top:6px">Belohnungs-Shop</h2>';
+  var any=false, rendered={};
+  REWARD_ORDER.forEach(function(ck){
+    var items=state.rewards.filter(function(r){return (r.cat||"ziele")===ck;}).sort(function(a,c){return a.cost-c.cost;});
+    if(!items.length) return; any=true; var c=REWARD_CATS[ck];
+    html+='<div class="cathead" style="color:'+c.color+'"><span class="catdot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.name+'</div>';
+    items.forEach(function(r){ rendered[r.id]=1; html+=rewardHTML(r,c.color,b); });
+  });
+  var rest=state.rewards.filter(function(r){return !rendered[r.id];});
+  if(rest.length){ var c=rewardCat("_"); html+='<div class="cathead" style="color:'+c.color+'"><span class="catdot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.name+'</div>'; rest.forEach(function(r){ html+=rewardHTML(r,c.color,b); }); any=true; }
+  if(!any) return html+emptyBox("🎁","Noch keine Belohnungen. Füge welche unter „Mehr“ hinzu.");
+  return html;
+}
+function rewardHTML(r,col,b){
+  var can=b>=r.cost, pct=Math.min(1,b/r.cost)*100;
+  var h='<div class="reward'+(can?" can":"")+'" style="margin-bottom:10px;border-left:4px solid '+col+'">'+
+    '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:30px">'+r.emoji+'</span>'+
+    '<div style="flex:1;min-width:0"><p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name)+'</p>'+
+    '<p class="v" style="color:'+col+'">'+r.cost+' ⭐</p></div>'+
+    '<button class="cta '+(can?"on":"off")+'" style="'+(can?"background:"+col+";color:#fff":"")+'" '+(can?'data-action="redeem" data-id="'+r.id+'"':"disabled")+'>'+(can?(unlocked?"Einlösen":"Anfragen"):"Gesperrt")+'</button></div>';
+  if(!can) h+='<div class="bar" style="margin-top:12px"><span style="width:'+pct+'%;background:'+col+'"></span></div>';
+  return h+'</div>';
+}
+
+function monthName(y,m){ return new Date(y,m,1).toLocaleDateString("de-DE",{month:"long",year:"numeric"}); }
+function viewCalendar(){
+  var sums={};
+  approvedTx().filter(function(t){return t.points>0;}).forEach(function(t){ var k=dayKey(new Date(t.date)); sums[k]=(sums[k]||0)+t.points; });
+  var first=new Date(calY,calM,1); var lead=(first.getDay()+6)%7; var dim=new Date(calY,calM+1,0).getDate();
+  var wd=["Mo","Di","Mi","Do","Fr","Sa","So"]; var tk=dayKey();
+  var html='<div class="cal"><div class="calhead"><button class="calnav" data-action="calprev">‹</button><b>'+monthName(calY,calM)+'</b><button class="calnav" data-action="calnext">›</button></div><div class="calgrid">';
+  wd.forEach(function(d){ html+='<div class="wd">'+d+'</div>'; });
+  for(var i=0;i<lead;i++) html+='<div class="cell empty"></div>';
+  for(var d=1; d<=dim; d++){
+    var key=calY+"-"+String(calM+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"); var s=sums[key]||0;
+    var lvl = s<=0?"":(s>=30?"e4":s>=15?"e3":s>=8?"e2":"e1");
+    var cls="cell"+(s>0?" earned "+lvl:"")+(key===tk?" today":"");
+    html+='<div class="'+cls+'" data-action="calday" data-day="'+key+'" data-sum="'+s+'">'+d+(s>0?'<span class="cp">+'+s+'</span>':'')+'</div>';
+  }
+  return html+'</div></div>';
+}
+
+function viewExtrato(){
+  var txs=state.transactions.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var te=approvedTx().filter(function(t){return t.points>0;}).reduce(function(s,t){return s+t.points;},0);
+  var ts=approvedTx().filter(function(t){return t.points<0;}).reduce(function(s,t){return s+t.points;},0);
+  var html='<h2 class="sectiontitle" style="margin-top:6px">Verlauf</h2>'+viewCalendar();
+  html+='<div class="twocol"><div class="stat earn"><p class="k">Gesamt verdient</p><p class="val" style="color:#248a3d">+'+te+' ⭐</p></div>'+
+    '<div class="stat spend"><p class="k">Gesamt ausgegeben</p><p class="val" style="color:#c4342b">'+ts+' ⭐</p></div></div>';
+  if(!txs.length) return html+emptyBox("🗓️","Noch nichts hier. Verdiene Sterne auf der Startseite!");
+  var lastDay=null;
+  txs.forEach(function(t){
+    var dk=dayKey(new Date(t.date));
+    if(dk!==lastDay){ html+='<p class="daylabel">'+fmtDay(dk)+'</p>'; lastDay=dk; }
+    var pend=(t.status==="pending"); var cls=t.points>=0?"earn":"spend";
+    html+='<div class="row '+(pend?"pending":"")+'" style="margin-bottom:8px"><span class="e">'+t.emoji+'</span>'+
+      '<div style="flex:1;min-width:0"><p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.label)+(pend?'<span class="tag">⏳ offen</span>':'')+'</p>'+
+      '<p style="color:var(--muted);font-size:12px">'+fmtDateTime(t.date)+(t.kind==="reward"?" · Belohnung":"")+'</p></div>'+
+      '<span class="v '+cls+'">'+(t.points>0?"+":"")+t.points+'</span>'+
+      (unlocked?'<button class="minibtn" data-action="deltx" data-id="'+t.id+'">✕</button>':'')+'</div>';
+  });
+  return html;
+}
+
+function viewApprove(){
+  var pend=pendingTx().slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var html='<div class="rowbetween" style="margin-top:6px;margin-bottom:12px"><h2 class="sectiontitle" style="margin:0">Einträge freigeben</h2>';
+  if(pend.length) html+='<button class="cta on" data-action="approveall">✓ Alle freigeben</button>';
+  html+='</div>';
+  if(!pend.length) return html+emptyBox("✅","Nichts offen. Alles erledigt! 🎉");
+  html+='<p class="hint" style="text-align:left;margin:-6px 0 12px">✓ freigeben (wird zu Sternen) · ✗ ablehnen (verwerfen)</p>';
+  var lastDay=null;
+  pend.forEach(function(t){
+    var dk=dayKey(new Date(t.date));
+    if(dk!==lastDay){ html+='<p class="daylabel">'+fmtDay(dk)+'</p>'; lastDay=dk; }
+    var cls=t.points>=0?"earn":"spend";
+    html+='<div class="row" style="margin-bottom:8px"><span class="e">'+t.emoji+'</span>'+
+      '<div style="flex:1;min-width:0"><p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.label)+'</p>'+
+      '<p style="color:var(--muted);font-size:12px">'+fmtDateTime(t.date)+'</p></div>'+
+      '<span class="v '+cls+'">'+(t.points>0?"+":"")+t.points+'</span>'+
+      '<button class="appbtn ok" data-action="approve" data-id="'+t.id+'">✓</button>'+
+      '<button class="appbtn no" data-action="reject" data-id="'+t.id+'">✗</button></div>';
+  });
+  return html;
+}
+
+function viewSettings(){
+  var html='<div style="padding-top:6px"><label class="lbl">Name des Kindes</label><input class="field" id="childName" style="margin-top:6px" value="'+esc(state.childName)+'"/></div>';
+  html+='<div style="margin-top:22px"><div class="rowbetween" style="margin-bottom:10px"><h3 class="sectiontitle" style="margin:0">Aufgaben (Sterne verdienen)</h3><button class="cta on" data-action="newq">+ Neu</button></div>';
+  TASK_ORDER.concat(["_"]).forEach(function(ck){
+    var items = ck==="_" ? state.quickActions.filter(function(q){return !TASK_CATS[q.cat];}) : state.quickActions.filter(function(q){return q.cat===ck;});
+    if(!items.length) return; var c=taskCat(ck);
+    html+='<div class="cathead" style="color:'+c.color+'"><span class="catdot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.name+'</div>';
+    items.forEach(function(q){
+      html+='<div class="row" style="margin-bottom:8px"><span class="e">'+q.emoji+'</span><span class="t">'+esc(q.label)+'</span><span class="v" style="color:'+c.color+'">+'+q.points+' ⭐</span>'+
+        '<button class="minibtn" data-action="editq" data-id="'+q.id+'">✏️</button><button class="minibtn" data-action="delq" data-id="'+q.id+'">🗑️</button></div>';
+    });
+  });
+  html+='</div>';
+  html+='<div style="margin-top:22px"><div class="rowbetween" style="margin-bottom:10px"><h3 class="sectiontitle" style="margin:0">Belohnungen</h3><button class="cta on" data-action="newr">+ Neu</button></div>';
+  REWARD_ORDER.concat(["_"]).forEach(function(ck){
+    var items = ck==="_" ? state.rewards.filter(function(r){return !REWARD_CATS[r.cat];}) : state.rewards.filter(function(r){return r.cat===ck;});
+    items=items.sort(function(a,c){return a.cost-c.cost;});
+    if(!items.length) return; var c=rewardCat(ck);
+    html+='<div class="cathead" style="color:'+c.color+'"><span class="catdot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.name+'</div>';
+    items.forEach(function(r){
+      html+='<div class="row" style="margin-bottom:8px"><span class="e">'+r.emoji+'</span><span class="t">'+esc(r.name)+'</span><span class="v" style="color:'+c.color+'">'+r.cost+' ⭐</span>'+
+        '<button class="minibtn" data-action="editr" data-id="'+r.id+'">✏️</button><button class="minibtn" data-action="delr" data-id="'+r.id+'">🗑️</button></div>';
+    });
+  });
+  html+='</div>';
+  html+='<div style="margin-top:22px"><h3 class="sectiontitle" style="margin:0 0 10px">Sicherheit (Erwachsenen-Modus)</h3>';
+  html+='<button class="ghostbtn" data-action="changepin" style="margin-bottom:8px">🔑 '+(state.pin?"PIN ändern":"PIN erstellen")+'</button>';
+  if(state.pin) html+='<button class="ghostbtn" data-action="removepin" style="margin-bottom:8px">🚫 PIN entfernen</button>';
+  html+='<button class="ghostbtn" data-action="locknow">🔒 Sperren (Erwachsenen-Modus verlassen)</button></div>';
+  html+='<div style="margin-top:22px"><h3 class="sectiontitle" style="margin:0 0 10px">Daten-Backup</h3>';
+  html+='<button class="ghostbtn" data-action="exportdata" style="margin-bottom:8px">⬇️ Backup speichern (Datei)</button>';
+  html+='<button class="ghostbtn" data-action="importdata">⬆️ Backup laden (Datei)</button>';
+  html+='<p class="note" style="margin-top:8px;text-align:left">Sichert alle Punkte, Aufgaben und Belohnungen als Datei – z. B. als Schutz gegen Tablet-Verlust.</p></div>';
+  html+='<button class="reset" style="margin-top:22px" data-action="resethist">🗑️ Verlauf und Punkte zurücksetzen</button>';
+  html+='<p class="note" style="margin-top:14px">📱 Die Punkte werden auf diesem Gerät gespeichert. Installieren: im Browser öffnen → Menü → <b>„Zum Home-Bildschirm“</b>.</p>';
+  return html;
+}
+
+function emptyBox(e,t){ return '<div class="empty"><div class="e">'+e+'</div><p>'+t+'</p></div>'; }
+function fmtDateTime(iso){ var d=new Date(iso); return d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+" · "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); }
+function fmtDay(dk){
+  if(dk===dayKey()) return "Heute";
+  var y=new Date(); y.setDate(y.getDate()-1);
+  if(dk===dayKey(y)) return "Gestern";
+  return new Date(dk+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"long"});
+}
+
+function closeModal(){ document.getElementById("modal").innerHTML=""; }
+function openSheet(inner){
+  var m=document.getElementById("modal");
+  m.innerHTML='<div class="overlay" id="ov"><div class="sheet" id="sh">'+inner+'</div></div>';
+  document.getElementById("ov").addEventListener("click",function(e){ if(e.target.id==="ov") closeModal(); });
+}
+function emojiGrid(list,selected){ return '<div class="emojirow" id="er">'+list.map(function(e){ return '<button data-e="'+e+'" class="'+(e===selected?"sel":"")+'">'+e+'</button>'; }).join("")+'</div>'; }
+function catChips(cats,order,sel){ return order.map(function(k){ var c=cats[k]; return '<button data-c="'+k+'" class="catchip'+(k===sel?" sel":"")+'" style="'+(k===sel?"background:"+c.color+";color:#fff;border-color:"+c.color:"")+'">'+c.emoji+' '+c.name+'</button>'; }).join(""); }
+function keypadHTML(){ var keys=["1","2","3","4","5","6","7","8","9","blank","0","del"]; return '<div class="keypad">'+keys.map(function(k){ if(k==="blank") return '<button class="blank" disabled></button>'; return '<button data-k="'+k+'">'+(k==="del"?"⌫":k)+'</button>'; }).join("")+'</div>'; }
+function drawDots(sh,n){ var d=""; for(var i=0;i<4;i++) d+='<span class="dot '+(i<n?"on":"")+'"></span>'; sh.querySelector("#dots").innerHTML=d; }
+function modalPin(onOk){
+  var entry="";
+  openSheet('<div class="center"><div class="bigemoji">🔒</div><h3 style="margin-bottom:2px">Erwachsenen-PIN</h3><p class="subtxt" style="margin-top:2px">Gib die 4 Ziffern ein</p><div class="pindots" id="dots"></div></div>'+keypadHTML()+'<button class="btn-cancel" id="cx" style="border:none;border-radius:14px;padding:12px;font-weight:600;width:100%;margin-top:14px">Abbrechen</button>');
+  var sh=document.getElementById("sh"); drawDots(sh,0);
+  sh.querySelector("#cx").addEventListener("click",closeModal);
+  sh.querySelectorAll("[data-k]").forEach(function(b){ b.addEventListener("click",function(){
+    var k=this.getAttribute("data-k"); if(k==="del") entry=entry.slice(0,-1); else if(entry.length<4) entry+=k; drawDots(sh,entry.length);
+    if(entry.length===4){ if(hashPin(entry)===state.pin){ closeModal(); onOk(); } else { var box=sh.querySelector("#dots"); box.classList.add("shake"); setTimeout(function(){ box.classList.remove("shake"); entry=""; drawDots(sh,0); },420); } }
+  }); });
+}
+function modalSetPin(onOk){
+  var stage=1, first="", entry="";
+  openSheet('<div class="center"><div class="bigemoji">🔑</div><h3 style="margin-bottom:2px" id="pt">Erstelle eine 4-stellige PIN</h3><p class="subtxt" style="margin-top:2px" id="ps">Nur du und Lukas’ Mutter sollten sie kennen</p><div class="pindots" id="dots"></div></div>'+keypadHTML()+'<button class="btn-cancel" id="cx" style="border:none;border-radius:14px;padding:12px;font-weight:600;width:100%;margin-top:14px">Abbrechen</button>');
+  var sh=document.getElementById("sh"); drawDots(sh,0);
+  sh.querySelector("#cx").addEventListener("click",closeModal);
+  sh.querySelectorAll("[data-k]").forEach(function(b){ b.addEventListener("click",function(){
+    var k=this.getAttribute("data-k"); if(k==="del") entry=entry.slice(0,-1); else if(entry.length<4) entry+=k; drawDots(sh,entry.length);
+    if(entry.length===4){
+      if(stage===1){ first=entry; entry=""; stage=2; sh.querySelector("#pt").textContent="PIN bestätigen"; sh.querySelector("#ps").textContent="Gib dieselben 4 Ziffern ein"; setTimeout(function(){ drawDots(sh,0); },150); }
+      else { if(entry===first){ state.pin=hashPin(entry); save(); closeModal(); if(onOk) onOk(); } else { var box=sh.querySelector("#dots"); box.classList.add("shake"); setTimeout(function(){ box.classList.remove("shake"); stage=1; first=""; entry=""; sh.querySelector("#pt").textContent="Stimmt nicht – neu erstellen"; sh.querySelector("#ps").textContent="4-stellige PIN"; drawDots(sh,0); },420); } }
+    }
+  }); });
+}
+
+var customSel={emoji:"⭐",sign:1,val:5};
+function modalCustom(){
+  customSel={emoji:"⭐",sign:1,val:5};
+  var signRow = unlocked ? '<div class="signrow" id="sr"><button data-s="1" class="selearn">+ Plus</button><button data-s="-1">− Minus</button></div>' : '';
+  var inner='<h3>'+(unlocked?"Neuer Eintrag":"Punkte anfragen")+'</h3>'+emojiGrid(EMOJIS_TASK,"⭐")+
+    '<input class="field" id="lbl" placeholder="Wofür? (z. B. Geschirr gespült)" style="margin-bottom:16px"/>'+signRow+
+    '<div class="stepper"><button data-step="-1">−</button><span class="sv" id="sv">5</span><button data-step="1">+</button><span style="color:var(--muted);font-weight:700">⭐</span></div>'+
+    '<button class="primary" id="saveBtn" disabled>Hinzufügen</button>';
+  openSheet(inner); var sh=document.getElementById("sh");
+  sh.querySelector("#er").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; customSel.emoji=b.getAttribute("data-e"); [].forEach.call(this.children,function(c){c.classList.remove("sel");}); b.classList.add("sel"); });
+  var sr=sh.querySelector("#sr");
+  if(sr) sr.addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; customSel.sign=parseInt(b.getAttribute("data-s"),10);
+    var ch=this.children; ch[0].className=customSel.sign===1?"selearn":""; ch[1].className=customSel.sign===-1?"selspend":""; updateCustomBtn(); });
+  sh.querySelectorAll("[data-step]").forEach(function(b){ b.addEventListener("click",function(){ customSel.val=Math.max(1,customSel.val+parseInt(this.getAttribute("data-step"),10)); sh.querySelector("#sv").textContent=customSel.val; updateCustomBtn(); }); });
+  var inp=sh.querySelector("#lbl"); inp.addEventListener("input",updateCustomBtn); setTimeout(function(){inp.focus();},100);
+  sh.querySelector("#saveBtn").addEventListener("click",function(){ var label=inp.value.trim(); if(!label)return; addTx({emoji:customSel.emoji,label:label,points:customSel.sign*customSel.val,kind:customSel.sign>0?"earn":"spend"}); closeModal(); });
+  function updateCustomBtn(){ var label=sh.querySelector("#lbl").value.trim(); var btn=sh.querySelector("#saveBtn"); btn.disabled=!label;
+    btn.textContent = !unlocked ? ("Anfragen +"+customSel.val+" ⭐") : (customSel.sign===1?("Hinzufügen +"+customSel.val+" ⭐"):("Abziehen "+customSel.val+" ⭐")); }
+}
+
+var itemSel={emoji:"",val:0,cat:""};
+function modalItem(kind,item){
+  var isR=kind==="reward"; var cats=isR?REWARD_CATS:TASK_CATS, order=isR?REWARD_ORDER:TASK_ORDER;
+  itemSel.emoji=item?item.emoji:(isR?"🎁":"⭐"); itemSel.val=item?(isR?item.cost:item.points):(isR?50:5);
+  itemSel.cat=(item&&cats[item.cat])?item.cat:order[0];
+  var step=isR?5:1; var list=isR?EMOJIS_REWARD:EMOJIS_TASK; var nm=item?(isR?item.name:item.label):"";
+  var title=item?(isR?"Belohnung bearbeiten":"Aufgabe bearbeiten"):(isR?"Neue Belohnung":"Neue Aufgabe");
+  var inner='<h3>'+title+'</h3>'+emojiGrid(list,itemSel.emoji)+
+    '<label class="lbl" style="display:block;margin-bottom:6px">Kategorie</label><div class="catrow" id="cr">'+catChips(cats,order,itemSel.cat)+'</div>'+
+    '<input class="field" id="nm" placeholder="'+(isR?"Name der Belohnung":"Name der Aufgabe")+'" value="'+esc(nm)+'" style="margin-bottom:16px"/>'+
+    '<div class="stepper"><button data-step="-'+step+'">−</button><span class="sv" id="sv">'+itemSel.val+'</span><button data-step="'+step+'">+</button><span style="color:var(--muted);font-weight:700">⭐</span></div>'+
+    '<button class="primary" id="saveBtn" '+(nm?"":"disabled")+'>Speichern</button>';
+  openSheet(inner); var sh=document.getElementById("sh");
+  sh.querySelector("#er").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; itemSel.emoji=b.getAttribute("data-e"); [].forEach.call(this.children,function(c){c.classList.remove("sel");}); b.classList.add("sel"); });
+  var cr=sh.querySelector("#cr");
+  cr.addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; itemSel.cat=b.getAttribute("data-c"); cr.innerHTML=catChips(cats,order,itemSel.cat); });
+  sh.querySelectorAll("[data-step]").forEach(function(b){ b.addEventListener("click",function(){ itemSel.val=Math.max(1,itemSel.val+parseInt(this.getAttribute("data-step"),10)); sh.querySelector("#sv").textContent=itemSel.val; }); });
+  var inp=sh.querySelector("#nm"); inp.addEventListener("input",function(){ sh.querySelector("#saveBtn").disabled=!this.value.trim(); });
+  sh.querySelector("#saveBtn").addEventListener("click",function(){ var name=inp.value.trim(); if(!name)return;
+    if(isR) saveReward({id:item?item.id:uid(),emoji:itemSel.emoji,name:name,cost:itemSel.val,cat:itemSel.cat});
+    else saveQuick({id:item?item.id:uid(),emoji:itemSel.emoji,label:name,points:itemSel.val,cat:itemSel.cat});
+    closeModal(); });
+}
+
+function modalConfirm(o){
+  var toneCls=o.tone==="rose"?"btn-rose":"btn-amber";
+  var inner='<div class="center"><div class="bigemoji">'+o.emoji+'</div><h3 style="margin-bottom:0">'+esc(o.title)+'</h3>'+(o.body?'<p class="subtxt">'+esc(o.body)+'</p>':"")+'</div>'+
+    '<div class="confirmbtns" style="margin-top:18px"><button class="btn-cancel" id="cx">Abbrechen</button><button class="'+toneCls+'" id="ok">'+esc(o.confirmLabel)+'</button></div>';
+  openSheet(inner); var sh=document.getElementById("sh");
+  sh.querySelector("#cx").addEventListener("click",closeModal);
+  sh.querySelector("#ok").addEventListener("click",function(){ o.onConfirm(); closeModal(); });
+}
+
+document.addEventListener("click",function(e){
+  var el=e.target.closest("[data-action]"); if(!el) return;
+  var a=el.getAttribute("data-action"), id=el.getAttribute("data-id");
+  if(a==="navtab"){ var target=el.getAttribute("data-tab"); if(target==="aprovar"||target==="ajustes") requireUnlock(target); else { tab=target; render(); } }
+  else if(a==="locktoggle"){ if(unlocked) lock(); else requireUnlock(tab); }
+  else if(a==="locknow"){ lock(); }
+  else if(a==="exportdata"){ exportData(); }
+  else if(a==="importdata"){ importData(); }
+  else if(a==="mute"){ state.muted=!state.muted; save(); render(); }
+  else if(a==="quick"){ var q=state.quickActions.find(function(x){return x.id===id;}); if(q) addTx({emoji:q.emoji,label:q.label,points:q.points,kind:"earn"}); }
+  else if(a==="custom"){ modalCustom(); }
+  else if(a==="redeem"){ var r=state.rewards.find(function(x){return x.id===id;}); if(!r) return;
+    if(unlocked) modalConfirm({emoji:r.emoji,title:r.name+" einlösen?",body:"Kostet "+r.cost+" Sterne. Neuer Stand: "+(balance()-r.cost)+" ⭐",confirmLabel:"Einlösen 🎉",tone:"amber",onConfirm:function(){redeem(r);}});
+    else modalConfirm({emoji:r.emoji,title:r.name+" anfragen?",body:"Geht zur Freigabe. Kostet "+r.cost+" ⭐.",confirmLabel:"Anfragen 🙏",tone:"amber",onConfirm:function(){redeem(r);}}); }
+  else if(a==="approve"){ approveTx(id); }
+  else if(a==="reject"){ rejectTx(id); }
+  else if(a==="approveall"){ var n=pendingTx().length; modalConfirm({emoji:"✅",title:"Alle freigeben?",body:"Gibt alle "+n+" offenen Einträge auf einmal frei.",confirmLabel:"Alle freigeben",tone:"amber",onConfirm:function(){approveAll();}}); }
+  else if(a==="changepin"){ modalSetPin(function(){ unlocked=true; render(); }); }
+  else if(a==="removepin"){ modalConfirm({emoji:"🚫",title:"PIN entfernen?",body:"Ohne PIN kann jeder den Erwachsenen-Modus auf diesem Gerät öffnen.",confirmLabel:"Entfernen",tone:"rose",onConfirm:function(){ state.pin=null; save(); render(); }}); }
+  else if(a==="calprev"){ calM--; if(calM<0){calM=11;calY--;} render(); }
+  else if(a==="calnext"){ calM++; if(calM>11){calM=0;calY++;} render(); }
+  else if(a==="calday"){ var key=el.getAttribute("data-day"), s=parseInt(el.getAttribute("data-sum"),10)||0; var p=key.split("-"); var dl=p[2]+"."+p[1]+"."+p[0]; toast(s>0?(dl+": +"+s+" ⭐"):(dl+": keine Sterne")); }
+  else if(a==="deltx"){ var t=state.transactions.find(function(x){return x.id===id;}); if(t) modalConfirm({emoji:"🗑️",title:"Diesen Eintrag löschen?",body:t.emoji+" "+t.label+" ("+(t.points>0?"+":"")+t.points+" ⭐)",confirmLabel:"Löschen",tone:"rose",onConfirm:function(){delTx(id);}}); }
+  else if(a==="newq"){ modalItem("quick",null); }
+  else if(a==="editq"){ var qq=state.quickActions.find(function(x){return x.id===id;}); if(qq) modalItem("quick",qq); }
+  else if(a==="delq"){ delQuick(id); }
+  else if(a==="newr"){ modalItem("reward",null); }
+  else if(a==="editr"){ var rr=state.rewards.find(function(x){return x.id===id;}); if(rr) modalItem("reward",rr); }
+  else if(a==="delr"){ delReward(id); }
+  else if(a==="resethist"){ modalConfirm({emoji:"⚠️",title:"Gesamten Verlauf zurücksetzen?",body:"Das löscht alle Einträge und der Punktestand geht auf null. Aufgaben und Belohnungen bleiben.",confirmLabel:"Alles zurücksetzen",tone:"rose",onConfirm:function(){state.transactions=[];save();render();}}); }
+});
+
+function drawStar(x,cx,cy,spikes,outer,inner){
+  var rot=Math.PI/2*3, step=Math.PI/spikes; x.beginPath(); x.moveTo(cx,cy-outer);
+  for(var i=0;i<spikes;i++){ x.lineTo(cx+Math.cos(rot)*outer,cy+Math.sin(rot)*outer); rot+=step; x.lineTo(cx+Math.cos(rot)*inner,cy+Math.sin(rot)*inner); rot+=step; }
+  x.lineTo(cx,cy-outer); x.closePath(); x.fill();
+}
+function rrect(x,X,Y,w,h,r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+w,Y,X+w,Y+h,r); x.arcTo(X+w,Y+h,X,Y+h,r); x.arcTo(X,Y+h,X,Y,r); x.arcTo(X,Y,X+w,Y,r); x.closePath(); }
+function makeIcon(size){
+  var c=document.createElement("canvas"); c.width=c.height=size; var x=c.getContext("2d");
+  var g=x.createLinearGradient(0,0,size,size); g.addColorStop(0,"#5eead4"); g.addColorStop(.5,"#22d3ee"); g.addColorStop(1,"#0a84ff");
+  rrect(x,0,0,size,size,size*0.22); x.fillStyle=g; x.fill();
+  x.fillStyle="#ffffff"; drawStar(x,size/2,size*0.52,5,size*0.30,size*0.14);
+  return c.toDataURL("image/png");
+}
+function setupPWA(){
+  try{
+    var i180=makeIcon(180), i192=makeIcon(192), i512=makeIcon(512);
+    setLink("apple-touch-icon",i180); setLink("icon",i180);
+    var manifest={name:"Lukify's 🦖 Punkte",short_name:"Lukify",start_url:".",scope:".",display:"standalone",orientation:"portrait",background_color:"#14b8a6",theme_color:"#0ea5e9",lang:"de",
+      icons:[{src:i192,sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:i512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
+    var blob=new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}); setManifest(URL.createObjectURL(blob));
+  }catch(e){}
+}
+function setLink(rel,href){ var l=document.querySelector('link[rel="'+rel+'"]'); if(!l){ l=document.createElement("link"); l.rel=rel; document.head.appendChild(l); } l.href=href; }
+function setManifest(href){ var l=document.querySelector('link[rel="manifest"]'); if(!l){ l=document.createElement("link"); l.rel="manifest"; document.head.appendChild(l); } l.href=href; }
+
+state=load(); setupPWA(); render();
+</script>
+</body>
+</html>
